@@ -1,20 +1,18 @@
 from __future__ import annotations
 import random
 from dataclasses import dataclass, field
-from typing import Callable, List, Sequence
+from typing import List, Sequence
 from src.models.individual import Individual
 from src.strategies.selection.SelectionStrategy import SelectionStrategy
 from src.strategies.crossover.CrossoverStrategy import CrossoverStrategy
 from src.strategies.mutation.MutationStrategy import MutationStrategy
-
-
-FitnessFunc = Callable[[Individual], float]
+from src.strategies.fitness.FitnessStrategy import FitnessStrategy
 
 
 @dataclass
 class GAEngine:
     """Simple genetic algorithm engine"""
-    fitness_fn: FitnessFunc
+    fitness: FitnessStrategy
     selection: SelectionStrategy
     crossover: CrossoverStrategy
     mutation: MutationStrategy | None
@@ -26,7 +24,7 @@ class GAEngine:
 
     def _evaluate(self, population: Sequence[Individual]) -> List[float]:
         """Return fitness scores for each individual in ``population``."""
-        return [self.fitness_fn(ind) for ind in population]
+        return [self.fitness.evaluate(ind) for ind in population]
 
     def _selection_scores(self, fitness: Sequence[float]) -> List[float]:
         """Transform fitness into selection scores where higher is better and non-negative when possible.

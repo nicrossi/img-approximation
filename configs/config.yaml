@@ -1,0 +1,42 @@
+experiment:
+  name: test
+  output_dir: output/${experiment.name}  # timestamp appended automatically
+
+data:
+  image_path: assets/argentina-flag.png
+  canvas_size: [300, 200]  # width, height
+
+renderer:
+  backend: pillow
+
+fitness:
+  name: pixel_mse
+  params: {}
+
+selection:
+  name: roulette
+  params: {}
+
+crossover:
+  name: one_point
+  params: {}
+
+mutation:
+  name: simple
+  params:
+    point_rate: 0.1
+    point_sigma: 0.05
+    color_rate: 0.05
+    color_sigma: 15.0
+    swap_rate: 0.01
+
+ga:
+  pop_size: 50
+  generations: 100
+  elitism: 2
+  maximize: false
+
+genome:
+  num_triangles: 30
+
+seed: 42

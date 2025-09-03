@@ -9,3 +9,12 @@ RGBA  = Tuple[int, int, int, int]     # 0..255
 class Triangle:
     p1: Point; p2: Point; p3: Point
     color: RGBA
+
+    @staticmethod
+    def triangle_to_dict(t: Triangle) -> dict:
+        return {
+            "p1": [t.p1[0], t.p1[1]],
+            "p2": [t.p2[0], t.p2[1]],
+            "p3": [t.p3[0], t.p3[1]],
+            "color": [t.color[0], t.color[1], t.color[2], t.color[3]],
+        }
