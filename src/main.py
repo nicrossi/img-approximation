@@ -10,6 +10,7 @@ from src.engine.PillowRenderer import PillowRenderer
 from src.engine.crossover import build_crossover
 from src.engine.engine import GAEngine
 from src.engine.selection import build_selection
+from src.engine.mutation import build_mutation
 from src.models.individual import Individual
 from src.models.triangle import Triangle
 from src.utils.config import load_config
@@ -31,13 +32,13 @@ def main():
     fit = None # Fitness function TBD
     select = build_selection(cfg.selection.name, cfg.selection.params)
     xover = build_crossover(cfg.crossover.name, cfg.crossover.params)
-    # mutate = TriangleMutation(**cfg.mutation.params)
+    mutate = build_mutation(cfg.mutation.name, cfg.mutation.params) if "mutation" in cfg else None
 
     eng = GAEngine(
         fitness_fn=fit,
         selection=select,
         crossover=xover,
-        mutation_fn=None, # mutate,
+        mutation=mutate,
         pop_size=cfg.ga.pop_size,
         generations=cfg.ga.generations,
         elitism=cfg.ga.elitism,

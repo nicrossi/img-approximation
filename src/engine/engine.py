@@ -5,10 +5,10 @@ from typing import Callable, List, Sequence
 from src.models.individual import Individual
 from src.strategies.selection.SelectionStrategy import SelectionStrategy
 from src.strategies.crossover.CrossoverStrategy import CrossoverStrategy
+from src.strategies.mutation.MutationStrategy import MutationStrategy
 
 
 FitnessFunc = Callable[[Individual], float]
-MutationFunc = Callable[[Individual], Individual]
 
 
 @dataclass
@@ -17,7 +17,7 @@ class GAEngine:
     fitness_fn: FitnessFunc
     selection: SelectionStrategy
     crossover: CrossoverStrategy
-    mutation_fn: MutationFunc | None
+    mutation: MutationStrategy | None
     pop_size: int
     generations: int
     elitism: int = 1
@@ -63,12 +63,12 @@ class GAEngine:
                 idxs = self.selection.select(sel_scores, 2)
                 parents = [pop[idxs[0]], pop[idxs[1]]]
                 child1, child2 = self.crossover.crossover(parents[0], parents[1])
-                if self.mutation_fn is not None:
-                    child1 = self.mutation_fn(child1)
+                if self.mutation is not None:
+                    child1 = self.mutation.mutate(child1)
                 new_pop.append(child1)
                 if len(new_pop) < self.pop_size:
-                    if self.mutation_fn is not None:
-                        child2 = self.mutation_fn(child2)
+                    if self.mutation is not None:
+                        child2 = self.mutation.mutate(child2)
                     new_pop.append(child2)
 
             pop = new_pop
