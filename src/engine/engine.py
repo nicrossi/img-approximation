@@ -1,13 +1,13 @@
 from __future__ import annotations
 import random
 from dataclasses import dataclass, field
-from typing import Callable, List, Sequence, Tuple
+from typing import Callable, List, Sequence
 from src.models.individual import Individual
+from src.strategies.selection.SelectionStrategy import SelectionStrategy
+from src.strategies.crossover.CrossoverStrategy import CrossoverStrategy
 
 
 FitnessFunc = Callable[[Individual], float]
-SelectionFunc = Callable[[Sequence[Individual], Sequence[float], int], List[Individual]]
-CrossoverFunc = Callable[[Individual, Individual], Tuple[Individual, Individual]]
 MutationFunc = Callable[[Individual], Individual]
 
 
@@ -15,9 +15,9 @@ MutationFunc = Callable[[Individual], Individual]
 class GAEngine:
     """Simple genetic algorithm engine"""
     fitness_fn: FitnessFunc
-    selection_fn: SelectionFunc
-    crossover_fn: CrossoverFunc
-    mutation_fn: MutationFunc
+    selection: SelectionStrategy
+    crossover: CrossoverStrategy
+    mutation_fn: MutationFunc | None
     pop_size: int
     generations: int
     elitism: int = 1
@@ -27,6 +27,21 @@ class GAEngine:
     def _evaluate(self, population: Sequence[Individual]) -> List[float]:
         """Return fitness scores for each individual in ``population``."""
         return [self.fitness_fn(ind) for ind in population]
+
+    def _selection_scores(self, fitness: Sequence[float]) -> List[float]:
+        """Transform fitness into selection scores where higher is better and non-negative when possible.
+        This lets selection strategies assume maximization without worrying about GAEngine.maximize.
+        """
+        if self.maximize:
+            return list(fitness)
+        if not fitness:
+            return []
+        m = max(fitness)
+        scores = [m - f for f in fitness]
+        # If all equal (scores all zero), fall back to uniform weights
+        if all(s <= 0 for s in scores):
+            return [1.0 for _ in fitness]
+        return scores
 
     def run(self, population: Sequence[Individual]) -> Individual:
         """Run the genetic algorithm and return the best individual found"""
@@ -44,12 +59,16 @@ class GAEngine:
             new_pop: List[Individual] = elite
 
             while len(new_pop) < self.pop_size:
-                parents = self.selection_fn(pop, fitness, 2)
-                child1, child2 = self.crossover_fn(parents[0], parents[1])
-                child1 = self.mutation_fn(child1)
+                sel_scores = self._selection_scores(fitness)
+                idxs = self.selection.select(sel_scores, 2)
+                parents = [pop[idxs[0]], pop[idxs[1]]]
+                child1, child2 = self.crossover.crossover(parents[0], parents[1])
+                if self.mutation_fn is not None:
+                    child1 = self.mutation_fn(child1)
                 new_pop.append(child1)
                 if len(new_pop) < self.pop_size:
-                    child2 = self.mutation_fn(child2)
+                    if self.mutation_fn is not None:
+                        child2 = self.mutation_fn(child2)
                     new_pop.append(child2)
 
             pop = new_pop

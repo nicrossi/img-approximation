@@ -7,6 +7,7 @@ import numpy as np
 from PIL import Image
 from pathlib import Path
 from src.engine.PillowRenderer import PillowRenderer
+from src.engine.crossover import build_crossover
 from src.engine.engine import GAEngine
 from src.engine.selection import build_selection
 from src.models.individual import Individual
@@ -29,13 +30,13 @@ def main():
     renderer = PillowRenderer(*cfg.data.canvas_size) if cfg.renderer.backend == "pillow" else None # Other renderers TBD
     fit = None # Fitness function TBD
     select = build_selection(cfg.selection.name, cfg.selection.params)
-    # xover = build_crossover(cfg.crossover.name, cfg.crossover.params)
+    xover = build_crossover(cfg.crossover.name, cfg.crossover.params)
     # mutate = TriangleMutation(**cfg.mutation.params)
 
     eng = GAEngine(
         fitness_fn=fit,
-        selection_fn=select,
-        crossover_fn=None, # xover,
+        selection=select,
+        crossover=xover,
         mutation_fn=None, # mutate,
         pop_size=cfg.ga.pop_size,
         generations=cfg.ga.generations,
