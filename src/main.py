@@ -76,6 +76,7 @@ def main():
         elitism=cfg["ga"]["elitism"],
         maximize=cfg["ga"]["maximize"],
         rng=random.Random(cfg["seed"]),
+        rho=float(cfg["ga"].get("rho", 0.5)),
     )
 
     pop = _init_population(cfg["ga"]["pop_size"], cfg["genome"]["num_triangles"], tuple(cfg["data"]["canvas_size"]))

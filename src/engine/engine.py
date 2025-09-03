@@ -1,5 +1,6 @@
 from __future__ import annotations
 import random
+from itertools import islice
 from dataclasses import dataclass, field
 from typing import List, Sequence
 from src.models.individual import Individual
@@ -21,6 +22,8 @@ class GAEngine:
     elitism: int = 1
     maximize: bool = False
     rng: random.Random = field(default_factory=random.Random)
+    # Generation gap (youth bias): fraction of population replaced by offspring each generation
+    rho: float = 0.5
 
     def _evaluate(self, population: Sequence[Individual]) -> List[float]:
         """Return fitness scores for each individual in ``population``."""
@@ -45,33 +48,56 @@ class GAEngine:
         """Run the genetic algorithm and return the best individual found"""
         if len(population) != self.pop_size:
             raise ValueError(
-                f"Population size {len(population)} != expected {self.pop_size}")
+                f"Population size {len(population)} != expected {self.pop_size}"
+            )
 
         pop: List[Individual] = list(population)
         fitness = self._evaluate(pop)
 
         for _ in range(self.generations):
-            ranked = list(zip(fitness, pop))
-            ranked.sort(key=lambda x: x[0], reverse=self.maximize)
+            ranked = sorted(zip(fitness, pop), key=lambda t: t[0], reverse=self.maximize)
             elite = [ind for _, ind in ranked[: self.elitism]]
-            new_pop: List[Individual] = elite
 
-            while len(new_pop) < self.pop_size:
-                sel_scores = self._selection_scores(fitness)
-                idxs = self.selection.select(sel_scores, 2)
-                parents = [pop[idxs[0]], pop[idxs[1]]]
-                child1, child2 = self.crossover.crossover(parents[0], parents[1])
-                if self.mutation is not None:
-                    child1 = self.mutation.mutate(child1)
-                new_pop.append(child1)
-                if len(new_pop) < self.pop_size:
+            max_children = max(0, self.pop_size - self.elitism)
+            desired = int(round(self.rho * self.pop_size))
+            num_children = min(max_children, max(0, desired))
+
+            sel_scores = self._selection_scores(fitness)
+
+            def child_stream():
+                while True:
+                    i, j = self.selection.select(sel_scores, 2)
+                    p1, p2 = pop[i], pop[j]
+                    c1, c2 = self.crossover.crossover(p1, p2)
                     if self.mutation is not None:
-                        child2 = self.mutation.mutate(child2)
-                    new_pop.append(child2)
+                        c1 = self.mutation.mutate(c1)
+                        c2 = self.mutation.mutate(c2)
+                    yield c1
+                    yield c2
+
+            children: List[Individual] = list(islice(child_stream(), num_children))
+
+            survivors_needed = self.pop_size - self.elitism - len(children)
+            survivors: List[Individual] = (
+                [ind for _, ind in ranked[self.elitism : self.elitism + survivors_needed]]
+                if survivors_needed > 0
+                else []
+            )
+
+            new_pop: List[Individual] = [*elite, *children, *survivors]
+
+            # If rounding or elitism caused underfill, top up with best individual
+            if len(new_pop) < self.pop_size:
+                fill = self.pop_size - len(new_pop)
+                best_ind = elite[0] if elite else ranked[0][1]
+                new_pop.extend([best_ind] * fill)
 
             pop = new_pop
             fitness = self._evaluate(pop)
 
-        ranked = list(zip(fitness, pop))
-        ranked.sort(key=lambda x: x[0], reverse=self.maximize)
-        return ranked[0][1]
+        best = (
+            max(zip(fitness, pop), key=lambda t: t[0])
+            if self.maximize
+            else min(zip(fitness, pop), key=lambda t: t[0])
+        )
+        return best[1]
