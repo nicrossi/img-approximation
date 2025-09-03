@@ -1,7 +1,7 @@
 import random
 from dataclasses import dataclass
 from typing import Sequence, List
-from src.engine.selection import SelectionStrategy
+from src.strategies.selection.SelectionStrategy import SelectionStrategy
 
 @dataclass
 class RouletteSelection(SelectionStrategy):

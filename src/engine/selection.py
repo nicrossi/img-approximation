@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import Dict, List, Sequence, Type
+from typing import Dict, Type
+from src.strategies.selection.SelectionStrategy import SelectionStrategy
 from src.strategies.selection.BoltzmannSelection import BoltzmannSelection
 from src.strategies.selection.EliteSelection import EliteSelection
 from src.strategies.selection.ProbTournamentSelection import ProbTournamentSelection
@@ -19,10 +20,5 @@ _SELECTION_STRATEGIES: Dict[str, Type[SelectionStrategy]] = {
     "ranking": RankingSelection,
 }
 
-
 def build_selection(name: str, params: Dict) -> SelectionStrategy:
     return _SELECTION_STRATEGIES[name](**params)
-
-class SelectionStrategy:
-    def select(self, fitness: Sequence[float], k: int) -> List[int]:
-        raise NotImplementedError
