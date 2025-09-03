@@ -1,4 +1,6 @@
 from __future__ import annotations
+
+import logging
 from pathlib import Path
 from typing import Any, Dict, Iterable, Mapping
 import datetime as _dt
@@ -6,8 +8,6 @@ import re
 import copy
 import yaml
 
-
-__all__ = ["load_config"]
 
 
 # ==== YAML helpers ====
@@ -108,19 +108,19 @@ def _expand_substitutions(cfg: Any, root: Mapping[str, Any]) -> Any:
 
 def load_config(config_path: str, profile: str | None = None, overrides: Iterable[str] | None = None) -> Dict[str, Any]:
     """
-    Carga una config YAML, aplica un perfil opcional y overrides por CLI.
+    Loads a YAML configuration, applies an optional profile, and CLI overrides.
 
     Args:
-        config_path: ruta al YAML base (e.g., 'configs/base.yaml').
-        profile: nombre del perfil (e.g., 'fast') → se busca en 'profiles/<profile>.yaml'
-                 relativo al YAML base. También acepta ruta absoluta a un YAML.
-        overrides: lista de strings en notación 'a.b.c=valor'. El valor se parsea con YAML.
+    - config_path: path to the base YAML (e.g., `configs/base.yaml`).
+    - profile: profile name (e.g., `fast`) → looked up as `profiles/<profile>.yaml` relative to the base YAML.
+    Also accepts an absolute path to a YAML file.
+    - overrides: list of strings in `a.b.c=value` notation. The value is parsed with YAML.
 
     Returns:
-        dict con la configuración final. Aplica:
-          - merge (base <- profile <- overrides)
-          - expansión de placeholders ${...} (p.ej. ${experiment.name})
-          - timestamp YYYYMMDD-HHMMSS añadido a experiment.output_dir (si existe)
+    - dict with the final configuration. Applies:
+      - merge (base <- profile <- overrides)
+      - expansion of placeholders `${...}` (e.g., `${experiment.name}`)
+      - `YYYYMMDD-HHMMSS` timestamp appended to `experiment.output_dir` (if present)
     """
     base_path = Path(config_path).expanduser().resolve()
     base_cfg = _read_yaml(base_path)
@@ -129,7 +129,7 @@ def load_config(config_path: str, profile: str | None = None, overrides: Iterabl
     if profile:
         prof_path = Path(profile)
         if not prof_path.is_file():
-            # buscar en 'profiles/<profile>.yaml' al lado del base
+            # 'profiles/<profile>.yaml'
             prof_path = base_path.with_name("profiles").joinpath(f"{profile}.yaml")
         prof_cfg = _read_yaml(prof_path)
         merged = _deep_update(merged, prof_cfg)
@@ -140,16 +140,13 @@ def load_config(config_path: str, profile: str | None = None, overrides: Iterabl
 
     merged = _expand_substitutions(merged, merged)
 
-    # 4) Agregar timestamp al output_dir si existe experiment.output_dir
     try:
         exp = merged.get("experiment", {})
         out_dir = exp.get("output_dir")
         if isinstance(out_dir, str) and out_dir:
             ts = _dt.datetime.now().strftime("%Y%m%d-%H%M%S")
-            # No crear directorio acá; solo devolvemos el path con timestamp
             merged["experiment"]["output_dir"] = str(Path(out_dir) / ts)
-    except Exception:
-        # Si faltan claves o no es string, lo ignoramos silenciosamente
-        pass
+    except Exception as e:
+        logging.warning("Failed to process 'experiment.output_dir': %s", e)
 
     return merged
