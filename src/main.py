@@ -15,7 +15,7 @@ from src.engine.fitness import build_fitness
 from src.models.individual import Individual
 from src.models.triangle import Triangle
 from src.utils.config import load_config
-
+from time import perf_counter #For profiling time
 
 def _init_population(pop_size: int, num_triangles: int, canvas_size: Tuple[int, int]) -> List[Individual]:
     """Create the initial population for the genetic algorithm.
@@ -80,7 +80,10 @@ def main():
     )
 
     pop = _init_population(cfg["ga"]["pop_size"], cfg["genome"]["num_triangles"], tuple(cfg["data"]["canvas_size"]))
+    s_time = perf_counter()
     best = eng.run(pop)
+    e_time = perf_counter()
+    print(f"GA completed in {e_time - s_time:.2f} seconds.")
     (out / "best.json").write_text(json.dumps(Individual.individual_to_dict(best), indent=2))
     img = renderer.render(best.triangles)
     Image.fromarray(img, mode="RGBA").save(out / "best.png")
