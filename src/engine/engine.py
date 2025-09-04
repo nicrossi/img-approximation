@@ -8,7 +8,8 @@ from src.strategies.selection.SelectionStrategy import SelectionStrategy
 from src.strategies.crossover.CrossoverStrategy import CrossoverStrategy
 from src.strategies.mutation.MutationStrategy import MutationStrategy
 from src.strategies.fitness.FitnessStrategy import FitnessStrategy
-
+from concurrent.futures import ThreadPoolExecutor
+from itertools import chain
 
 @dataclass
 class GAEngine:
@@ -27,7 +28,9 @@ class GAEngine:
 
     def _evaluate(self, population: Sequence[Individual]) -> List[float]:
         """Return fitness scores for each individual in ``population``."""
-        return [self.fitness.evaluate(ind) for ind in population]
+        with ThreadPoolExecutor() as executor:
+            results = list(executor.map(self.fitness.evaluate, population))
+        return results
 
     def _selection_scores(self, fitness: Sequence[float]) -> List[float]:
         """Transform fitness into selection scores where higher is better and non-negative when possible.
@@ -64,18 +67,21 @@ class GAEngine:
 
             sel_scores = self._selection_scores(fitness)
 
-            def child_stream():
-                while True:
-                    i, j = self.selection.select(sel_scores, 2)
-                    p1, p2 = pop[i], pop[j]
-                    c1, c2 = self.crossover.crossover(p1, p2)
-                    if self.mutation is not None:
-                        c1 = self.mutation.mutate(c1)
-                        c2 = self.mutation.mutate(c2)
-                    yield c1
-                    yield c2
+            def make_child():
+                i, j = self.selection.select(sel_scores, 2)
+                p1, p2 = pop[i], pop[j]
+                c1, c2 = self.crossover.crossover(p1, p2)
+                if self.mutation is not None:
+                    c1 = self.mutation.mutate(c1)
+                    c2 = self.mutation.mutate(c2)
+                return c1, c2
 
-            children: List[Individual] = list(islice(child_stream(), num_children))
+            with ThreadPoolExecutor() as executor:
+                # Each call returns (c1, c2), so we need num_children//2 calls
+                num_pairs = (num_children+1)//2
+                child_pairs = list(executor.map(lambda _: make_child(), range(num_pairs)))
+                # Flatten pairs to a single list
+                children = list(islice(chain.from_iterable(child_pairs), num_children))
 
             survivors_needed = self.pop_size - self.elitism - len(children)
             survivors: List[Individual] = (
