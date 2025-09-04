@@ -5,6 +5,14 @@ A custom Genetic Algorithms engine evolves candidate artworks—each genome enco
 The system supports pluggable selection/crossover/mutation strategies and YAML/JSON configs for reproducible runs. Outputs include the best-rendered image, evolution metrics (fitness over generations), 
 and an image representation of the final triangle set—offering a compact, human-legible “compressed” form.
 
+## Models Overview
+- **Gene**: Each [triangle](./src/models/triangle.py) is represented by its 3 vertex points and a RGBA color. `(p1,p2,p3, R,G,B,A)` -> 10 alleles per gene `(6 floats, 4 ints)`.
+    - Vertex points `p1, p2, p3` coordinates are normalized `floats` in `[0, 1]` relative to the canvas size.
+    - Color channels `R, G, B, A` are `ints` in `[0, 255]`. 
+
+
+- **Genome**: Each [individual](./src/models/individual.py) encodes a fixed number of triangles. Sorted list of `num_triangles` genes, `z-order` matters (later triangles overlay earlier ones, see [PillowRenderer](./src/engine/PillowRenderer.py)).
+
 ## Configuration
 
 Experiment parameters live in `configs/config.yaml`. The loader merges a base file with optional profiles and command‑line
