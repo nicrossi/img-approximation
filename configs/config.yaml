@@ -4,7 +4,7 @@ experiment:
 
 data:
   image_path: assets/argentina-flag.png
-  canvas_size: [300, 200]  # width, height
+  canvas_size: [300, 256]  # width, height
 
 renderer:
   backend: pillow
@@ -14,29 +14,27 @@ fitness:
   params: {}
 
 selection:
-  name: roulette
+  name: universal
   params: {}
 
 crossover:
-  name: one_point
+  name: uniform
   params: {}
 
 mutation:
-  name: simple
+  name: gen
   params:
-    point_rate: 0.1
     point_sigma: 0.05
-    color_rate: 0.05
     color_sigma: 15.0
-    swap_rate: 0.01
 
 ga:
   pop_size: 50
-  generations: 100
+  generations: 1500
   elitism: 2
   maximize: false
+  rho: 0.5  # generation gap (youth bias)
 
 genome:
-  num_triangles: 30
+  num_triangles: 100
 
 seed: 42
