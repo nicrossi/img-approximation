@@ -10,7 +10,6 @@ from src.strategies.mutation.MutationStrategy import MutationStrategy
 from src.strategies.fitness.FitnessStrategy import FitnessStrategy
 from src.utils.metrics import GAMetrics
 from concurrent.futures import ThreadPoolExecutor
-from itertools import chain
 import numpy as np
 
 @dataclass
@@ -76,7 +75,7 @@ class GAEngine:
             metrics.mean_fitnesses.append(fitness_arr.mean())
             metrics.std_fitnesses.append(fitness_arr.std())
 
-            for _ in range(self.generations):
+            for gen in range(self.generations):
                 ranked = sorted(zip(fitness, pop), key=lambda t: t[0], reverse=self.maximize)
                 elite = [ind for _, ind in ranked[: self.elitism]]
 
@@ -121,10 +120,15 @@ class GAEngine:
                 fitness = self._evaluate(pop, executor)
                 #Store metrics for current population
                 fitness_arr = np.array(fitness)
-                metrics.max_fitnesses.append(fitness_arr.max())
-                metrics.min_fitnesses.append(fitness_arr.min())
-                metrics.mean_fitnesses.append(fitness_arr.mean())
-                metrics.std_fitnesses.append(fitness_arr.std())
+                max_f = float(fitness_arr.max())
+                min_f = float(fitness_arr.min())
+                mean_f = float(fitness_arr.mean())
+                std_f = float(fitness_arr.std())
+                metrics.max_fitnesses.append(max_f)
+                metrics.min_fitnesses.append(min_f)
+                metrics.mean_fitnesses.append(mean_f)
+                metrics.std_fitnesses.append(std_f)
+                print(f"Generation {gen+1}/{self.generations}: max={max_f:.6g} min={min_f:.6g} mean={mean_f:.6g} std={std_f:.6g}")
 
         best_idx = int(fitness_arr.argmax()) if self.maximize else int(fitness_arr.argmin())
         return pop[best_idx], metrics
