@@ -29,7 +29,7 @@ mutation:
 
 ga:
   pop_size: 50
-  generations: 1500
+  generations: 100
   elitism: 2
   maximize: false
   rho: 0.5  # generation gap (youth bias)
