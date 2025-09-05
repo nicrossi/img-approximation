@@ -17,7 +17,7 @@ from src.models.triangle import Triangle
 from src.utils.config import load_config
 from time import perf_counter #For profiling time
 
-from src.utils.metrics import write_metrics
+from src.utils.metrics import write_metrics, plot_metrics
 
 
 def _init_population(pop_size: int, num_triangles: int, canvas_size: Tuple[int, int]) -> List[Individual]:
@@ -84,21 +84,23 @@ def main():
 
     pop = _init_population(cfg["ga"]["pop_size"], cfg["genome"]["num_triangles"], tuple(cfg["data"]["canvas_size"]))
     s_time = perf_counter()
-    best, best_fitness = eng.run(pop)
+    best, metrics = eng.run(pop)
     e_time = perf_counter()
-    write_output(cfg, best, best_fitness, e_time - s_time, out, renderer)
+    write_output(cfg, best, metrics, e_time - s_time, out, renderer)
+    plot_metrics(metrics, out)
 
 
-def write_output(cfg, best, best_fitness, elapsed_time, out, renderer):
+def write_output(cfg, best, metrics, elapsed_time, out, renderer):
     print(f"GA completed in {elapsed_time:.3f} seconds.")
     (out / "best.json").write_text(json.dumps(Individual.individual_to_dict(best), indent=2))
     img = renderer.render(best.triangles)
     Image.fromarray(img).save(out / "best.png")
+    best_fitness = metrics.max_fitnesses[-1] if cfg["ga"]["maximize"] else metrics.min_fitnesses[-1]
     write_metrics(
         cfg,
         out,
         elapsed_time,
-        {"final_fitness": float(best_fitness)},
+        metrics.__dict__ | {"final_fitness": float(best_fitness)},
         )
 
 

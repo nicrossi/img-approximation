@@ -8,8 +8,10 @@ from src.strategies.selection.SelectionStrategy import SelectionStrategy
 from src.strategies.crossover.CrossoverStrategy import CrossoverStrategy
 from src.strategies.mutation.MutationStrategy import MutationStrategy
 from src.strategies.fitness.FitnessStrategy import FitnessStrategy
+from src.utils.metrics import GAMetrics
 from concurrent.futures import ThreadPoolExecutor
 from itertools import chain
+import numpy as np
 
 @dataclass
 class GAEngine:
@@ -47,7 +49,7 @@ class GAEngine:
             return [1.0 for _ in fitness]
         return scores
 
-    def run(self, population: Sequence[Individual]) -> tuple[Individual, float]:
+    def run(self, population: Sequence[Individual]) -> tuple[Individual, GAMetrics]:
         """Run the genetic algorithm and return the best individual and its fitness value"""
         if len(population) != self.pop_size:
             raise ValueError(
@@ -56,6 +58,14 @@ class GAEngine:
 
         pop: List[Individual] = list(population)
         fitness = self._evaluate(pop)
+        #Instantiate metrics storage
+        metrics = GAMetrics()
+        #Store metrics for initial population
+        fitness_arr = np.array(fitness)
+        metrics.max_fitnesses.append(fitness_arr.max())
+        metrics.min_fitnesses.append(fitness_arr.min())
+        metrics.mean_fitnesses.append(fitness_arr.mean())
+        metrics.std_fitnesses.append(fitness_arr.std())
 
         for _ in range(self.generations):
             ranked = sorted(zip(fitness, pop), key=lambda t: t[0], reverse=self.maximize)
@@ -100,10 +110,12 @@ class GAEngine:
 
             pop = new_pop
             fitness = self._evaluate(pop)
-
-        best = (
-            max(zip(fitness, pop), key=lambda t: t[0])
-            if self.maximize
-            else min(zip(fitness, pop), key=lambda t: t[0])
-        )
-        return best[1], best[0]
+            #Store metrics for current population
+            fitness_arr = np.array(fitness)
+            metrics.max_fitnesses.append(fitness_arr.max())
+            metrics.min_fitnesses.append(fitness_arr.min())
+            metrics.mean_fitnesses.append(fitness_arr.mean())
+            metrics.std_fitnesses.append(fitness_arr.std())
+   
+        best_idx = int(fitness_arr.argmax()) if self.maximize else int(fitness_arr.argmin())
+        return pop[best_idx], metrics
