@@ -4,7 +4,7 @@ experiment:
 
 data:
   image_path: assets/argentina-flag.png
-  canvas_size: [300, 256]  # width, height
+  canvas_size: [600, 400]  # width, height
 
 renderer:
   backend: pillow
@@ -33,7 +33,7 @@ ga:
   elitism: 2
   maximize: false
   rho: 0.5  # generation gap (youth bias)
-  max_workers: null
+  max_workers: 8
 
 genome:
   num_triangles: 100
