@@ -21,7 +21,9 @@ def test_pixel_mse_zero_on_identical_render():
     fit = PixelMSEFitness(renderer=renderer, target=target)
 
     score = fit.evaluate(ind)
-    assert score == 0.0
+    # The score should equal the alpha regularization term since MSE is zero
+    expected_alpha_reg = fit.alpha_reg_lambda * np.mean([t.color[3] / 255.0 for t in tris])
+    assert np.isclose(score, expected_alpha_reg, atol=1e-6)
 
 
 def test_pixel_mse_positive_on_difference():
@@ -32,12 +34,13 @@ def test_pixel_mse_positive_on_difference():
     fit = PixelMSEFitness(renderer=renderer, target=target)
 
     # Change one triangle color to force a difference
-    changed = [ # blue instead of red
+    changed = [
         Triangle(p1=tris[0].p1, p2=tris[0].p2, p3=tris[0].p3, color=(0, 0, 255, 255)),
         tris[1],
     ]
     ind2 = Individual(changed)
 
     score = fit.evaluate(ind2)
-    assert score > 0.0
-
+    # The score should be greater than the alpha regularization term
+    expected_alpha_reg = fit.alpha_reg_lambda * np.mean([t.color[3] / 255.0 for t in changed])
+    assert score > expected_alpha_reg
