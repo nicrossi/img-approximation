@@ -27,12 +27,20 @@ class GAEngine:
     rng: random.Random = field(default_factory=random.Random)
     # Generation gap (youth bias): fraction of population replaced by offspring each generation
     rho: float = 0.5
+    max_workers: int | None = None # thread-pool size for fitness evaluation
 
-    def _evaluate(self, population: Sequence[Individual]) -> List[float]:
+    def __post_init__(self) -> None:
+        # Provide separate RNGs for strategies to avoid shared-state contention
+        if hasattr(self.selection, "rng"):
+            self.selection.rng = random.Random(self.rng.random())
+        if hasattr(self.crossover, "rng"):
+            self.crossover.rng = random.Random(self.rng.random())
+        if self.mutation is not None and hasattr(self.mutation, "rng"):
+            self.mutation.rng = random.Random(self.rng.random())
+
+    def _evaluate(self, population: Sequence[Individual], executor: ThreadPoolExecutor) -> List[float]:
         """Return fitness scores for each individual in ``population``."""
-        with ThreadPoolExecutor() as executor:
-            results = list(executor.map(self.fitness.evaluate, population))
-        return results
+        return list(executor.map(self.fitness.evaluate, population))
 
     def _selection_scores(self, fitness: Sequence[float]) -> List[float]:
         """Transform fitness into selection scores where higher is better and non-negative when possible.
@@ -57,65 +65,66 @@ class GAEngine:
             )
 
         pop: List[Individual] = list(population)
-        fitness = self._evaluate(pop)
-        #Instantiate metrics storage
-        metrics = GAMetrics()
-        #Store metrics for initial population
-        fitness_arr = np.array(fitness)
-        metrics.max_fitnesses.append(fitness_arr.max())
-        metrics.min_fitnesses.append(fitness_arr.min())
-        metrics.mean_fitnesses.append(fitness_arr.mean())
-        metrics.std_fitnesses.append(fitness_arr.std())
-
-        for _ in range(self.generations):
-            ranked = sorted(zip(fitness, pop), key=lambda t: t[0], reverse=self.maximize)
-            elite = [ind for _, ind in ranked[: self.elitism]]
-
-            max_children = max(0, self.pop_size - self.elitism)
-            desired = int(round(self.rho * self.pop_size))
-            num_children = min(max_children, max(0, desired))
-
-            sel_scores = self._selection_scores(fitness)
-
-            def make_child():
-                i, j = self.selection.select(sel_scores, 2)
-                p1, p2 = pop[i], pop[j]
-                c1, c2 = self.crossover.crossover(p1, p2)
-                if self.mutation is not None:
-                    c1 = self.mutation.mutate(c1)
-                    c2 = self.mutation.mutate(c2)
-                return c1, c2
-
-            with ThreadPoolExecutor() as executor:
-                # Each call returns (c1, c2), so we need num_children//2 calls
-                num_pairs = (num_children+1)//2
-                child_pairs = list(executor.map(lambda _: make_child(), range(num_pairs)))
-                # Flatten pairs to a single list
-                children = list(islice(chain.from_iterable(child_pairs), num_children))
-
-            survivors_needed = self.pop_size - self.elitism - len(children)
-            survivors: List[Individual] = (
-                [ind for _, ind in ranked[self.elitism : self.elitism + survivors_needed]]
-                if survivors_needed > 0
-                else []
-            )
-
-            new_pop: List[Individual] = [*elite, *children, *survivors]
-
-            # If rounding or elitism caused underfill, top up with best individual
-            if len(new_pop) < self.pop_size:
-                fill = self.pop_size - len(new_pop)
-                best_ind = elite[0] if elite else ranked[0][1]
-                new_pop.extend([best_ind] * fill)
-
-            pop = new_pop
-            fitness = self._evaluate(pop)
-            #Store metrics for current population
+        with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
+            fitness = self._evaluate(pop, executor)
+            #Instantiate metrics storage
+            metrics = GAMetrics()
+            #Store metrics for initial population
             fitness_arr = np.array(fitness)
             metrics.max_fitnesses.append(fitness_arr.max())
             metrics.min_fitnesses.append(fitness_arr.min())
             metrics.mean_fitnesses.append(fitness_arr.mean())
             metrics.std_fitnesses.append(fitness_arr.std())
-   
+
+            for _ in range(self.generations):
+                ranked = sorted(zip(fitness, pop), key=lambda t: t[0], reverse=self.maximize)
+                elite = [ind for _, ind in ranked[: self.elitism]]
+
+                max_children = max(0, self.pop_size - self.elitism)
+                desired = int(round(self.rho * self.pop_size))
+                num_children = min(max_children, max(0, desired))
+
+                sel_scores = self._selection_scores(fitness)
+
+                def make_child():
+                    i, j = self.selection.select(sel_scores, 2)
+                    p1, p2 = pop[i], pop[j]
+                    c1, c2 = self.crossover.crossover(p1, p2)
+                    if self.mutation is not None:
+                        c1 = self.mutation.mutate(c1)
+                        c2 = self.mutation.mutate(c2)
+                    return c1, c2
+
+                children: List[Individual] = []
+                num_pairs = (num_children + 1) // 2
+                for _ in range(num_pairs):
+                    c1, c2 = make_child()
+                    children.extend((c1, c2))
+                children = list(islice(children, num_children))
+
+                survivors_needed = self.pop_size - self.elitism - len(children)
+                survivors: List[Individual] = (
+                    [ind for _, ind in ranked[self.elitism : self.elitism + survivors_needed]]
+                    if survivors_needed > 0
+                    else []
+                )
+
+                new_pop: List[Individual] = [*elite, *children, *survivors]
+
+                # If rounding or elitism caused underfill, top up with best individual
+                if len(new_pop) < self.pop_size:
+                    fill = self.pop_size - len(new_pop)
+                    best_ind = elite[0] if elite else ranked[0][1]
+                    new_pop.extend([best_ind] * fill)
+
+                pop = new_pop
+                fitness = self._evaluate(pop, executor)
+                #Store metrics for current population
+                fitness_arr = np.array(fitness)
+                metrics.max_fitnesses.append(fitness_arr.max())
+                metrics.min_fitnesses.append(fitness_arr.min())
+                metrics.mean_fitnesses.append(fitness_arr.mean())
+                metrics.std_fitnesses.append(fitness_arr.std())
+
         best_idx = int(fitness_arr.argmax()) if self.maximize else int(fitness_arr.argmin())
         return pop[best_idx], metrics

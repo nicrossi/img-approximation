@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from typing import Sequence, List
-from src.engine.selection import SelectionStrategy
+from src.strategies.selection.SelectionStrategy import SelectionStrategy
 from src.strategies.selection.RouletteSelection import RouletteSelection
 import numpy as np
 
@@ -32,4 +32,4 @@ class BoltzmannSelection(SelectionStrategy):
             raise OverflowError("Overflow in exp(fitness/t). Try increasing t_initial or t_final")
         pseudo_fit = exp_fitness / exp_fitness.mean()
         self.generation_count += 1
-        return RouletteSelection().select(pseudo_fit, k)
+        return RouletteSelection(rng=self.rng).select(pseudo_fit, k)

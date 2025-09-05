@@ -80,6 +80,7 @@ def main():
         maximize=cfg["ga"]["maximize"],
         rng=random.Random(cfg["seed"]),
         rho=float(cfg["ga"].get("rho", 0.5)),
+        max_workers=cfg["ga"].get("max_workers"),
     )
 
     pop = _init_population(cfg["ga"]["pop_size"], cfg["genome"]["num_triangles"], tuple(cfg["data"]["canvas_size"]))

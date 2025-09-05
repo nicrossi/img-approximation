@@ -1,4 +1,3 @@
-import random
 from dataclasses import dataclass
 from typing import Sequence, List
 
@@ -18,7 +17,7 @@ class UniversalSelection(SelectionStrategy):
             raise ValueError("fitness must be non-negative with positive sum")
 
         step = total / k
-        start = random.random() * step
+        start = self.rng.random() * step
         points = [start + i * step for i in range(k)]
 
         selected: List[int] = []

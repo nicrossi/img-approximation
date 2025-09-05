@@ -1,7 +1,6 @@
 from dataclasses import dataclass
 from typing import Sequence, List
 from src.strategies.selection.SelectionStrategy import SelectionStrategy
-from random import sample, random
 
 @dataclass
 class ProbTournamentSelection(SelectionStrategy):
@@ -20,10 +19,10 @@ class ProbTournamentSelection(SelectionStrategy):
         """
         selected = []
         for _ in range(k):
-            indices = sample(range(len(fitness)), 2)
+            indices = self.rng.sample(range(len(fitness)), 2)
             indices.sort(key=lambda idx: fitness[idx], reverse=True)
-            if random() < self.threshold:
-                selected.append(indices[0]) #Selects the best
+            if self.rng.random() < self.threshold:
+                selected.append(indices[0])  # Selects the best
             else:
-                selected.append(indices[1]) #Selects the worst
+                selected.append(indices[1])  # Selects the worst
         return selected

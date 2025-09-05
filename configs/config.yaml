@@ -33,6 +33,7 @@ ga:
   elitism: 2
   maximize: false
   rho: 0.5  # generation gap (youth bias)
+  max_workers: null
 
 genome:
   num_triangles: 100
