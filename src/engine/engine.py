@@ -47,8 +47,8 @@ class GAEngine:
             return [1.0 for _ in fitness]
         return scores
 
-    def run(self, population: Sequence[Individual]) -> Individual:
-        """Run the genetic algorithm and return the best individual found"""
+    def run(self, population: Sequence[Individual]) -> tuple[Individual, float]:
+        """Run the genetic algorithm and return the best individual and its fitness value"""
         if len(population) != self.pop_size:
             raise ValueError(
                 f"Population size {len(population)} != expected {self.pop_size}"
@@ -106,4 +106,4 @@ class GAEngine:
             if self.maximize
             else min(zip(fitness, pop), key=lambda t: t[0])
         )
-        return best[1]
+        return best[1], best[0]
