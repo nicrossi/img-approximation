@@ -19,6 +19,7 @@ selection:
 
 crossover:
   name: uniform
+  name: annular
   params: {}
 
 mutation:
@@ -34,8 +35,10 @@ ga:
   maximize: false
   rho: 0.5  # generation gap (youth bias)
   max_workers: 8
+  early_stopping_patience: 25
+  error_threshold: 1000.0
 
 genome:
-  num_triangles: 100
+  num_triangles: 30
 
 seed: 42

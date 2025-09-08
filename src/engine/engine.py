@@ -27,6 +27,10 @@ class GAEngine:
     # Generation gap (youth bias): fraction of population replaced by offspring each generation
     rho: float = 0.5
     max_workers: int | None = None # thread-pool size for fitness evaluation
+    # Early stopping options
+    early_stopping_patience: int = 0  # Number of stagnant generations before stopping
+    error_threshold: float | None = None  # Stop if min_fitness drops below this (for minimization)
+
 
     def __post_init__(self) -> None:
         # Provide separate RNGs for strategies to avoid shared-state contention
@@ -75,6 +79,10 @@ class GAEngine:
             metrics.mean_fitnesses.append(fitness_arr.mean())
             metrics.std_fitnesses.append(fitness_arr.std())
 
+            #for early stopping if convergence tracking variables:
+            best_fitness = fitness_arr.max() if self.maximize else fitness_arr.min()
+            stagnant_epochs = 0
+
             for gen in range(self.generations):
                 ranked = sorted(zip(fitness, pop), key=lambda t: t[0], reverse=self.maximize)
                 elite = [ind for _, ind in ranked[: self.elitism]]
@@ -122,6 +130,29 @@ class GAEngine:
                 fitness_arr = np.array(fitness)
                 max_f = float(fitness_arr.max())
                 min_f = float(fitness_arr.min())
+
+                # --- Early Stopping Logic ---
+                current_best = max_f if self.maximize else min_f
+
+                if not self.maximize and self.error_threshold is not None:
+                    if min_f <= self.error_threshold:
+                        print(
+                            f"Early stopping at generation {gen + 1}: error_threshold reached ({min_f:.6f} ≤ {self.error_threshold})")
+                        break
+
+                if (self.maximize and current_best > best_fitness) or (
+                        not self.maximize and current_best < best_fitness):
+                    best_fitness = current_best
+                    stagnant_epochs = 0
+                else:
+                    stagnant_epochs += 1
+
+                if self.early_stopping_patience > 0 and stagnant_epochs >= self.early_stopping_patience:
+                    print(
+                        f"Early stopping at generation {gen + 1}: no improvement for {self.early_stopping_patience} generations.")
+                    break
+
+                # --- Continue with metrics ---
                 mean_f = float(fitness_arr.mean())
                 std_f = float(fitness_arr.std())
                 metrics.max_fitnesses.append(max_f)
