@@ -20,7 +20,7 @@ def _gauss_perturb(rng: random.Random, val: float, sigma: float) -> float:
 
 
 @dataclass
-class SimpleMutation(MutationStrategy):
+class UniformMutation(MutationStrategy):
     # Position mutation per coordinate in normalized [0,1]
     point_rate: float = 0.1
     point_sigma: float = 0.05

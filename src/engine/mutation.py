@@ -3,12 +3,14 @@ from typing import Dict, Type
 
 from src.strategies.mutation.GenMutation import GenMutation
 from src.strategies.mutation.MutationStrategy import MutationStrategy
-from src.strategies.mutation.SimpleMutation import SimpleMutation
+from src.strategies.mutation.UniformMutation import UniformMutation
+from src.strategies.mutation.MultiGenLimitedMutation import MultiGenLimitedMutation
 from src.strategies.mutation.NonUniform import NonUniform
 
 _MUTATION_STRATEGIES: Dict[str, Type[MutationStrategy]] = {
-    "simple": SimpleMutation,
+    "uniform": UniformMutation,
     "gen": GenMutation,
+    "multigen": MultiGenLimitedMutation,
     "nonuniform": NonUniform
 }
 
