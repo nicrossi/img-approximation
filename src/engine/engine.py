@@ -9,7 +9,7 @@ from src.strategies.crossover.CrossoverStrategy import CrossoverStrategy
 from src.strategies.mutation.MutationStrategy import MutationStrategy
 from src.strategies.fitness.FitnessStrategy import FitnessStrategy
 from src.utils.metrics import GAMetrics
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ProcessPoolExecutor
 import numpy as np
 
 @dataclass
@@ -41,7 +41,7 @@ class GAEngine:
         if self.mutation is not None and hasattr(self.mutation, "rng"):
             self.mutation.rng = random.Random(self.rng.random())
 
-    def _evaluate(self, population: Sequence[Individual], executor: ThreadPoolExecutor) -> List[float]:
+    def _evaluate(self, population: Sequence[Individual], executor: ProcessPoolExecutor) -> List[float]:
         """Return fitness scores for each individual in ``population``."""
         return list(executor.map(self.fitness.evaluate, population))
 
@@ -68,7 +68,7 @@ class GAEngine:
             )
 
         pop: List[Individual] = list(population)
-        with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
+        with ProcessPoolExecutor(max_workers=self.max_workers) as executor:
             fitness = self._evaluate(pop, executor)
             #Instantiate metrics storage
             metrics = GAMetrics()

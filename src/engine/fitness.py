@@ -3,9 +3,11 @@ from typing import Dict, Type
 
 from src.strategies.fitness.FitnessStrategy import FitnessStrategy
 from src.strategies.fitness.PixelMSEFitness import PixelMSEFitness
+from src.strategies.fitness.SSIMFitness import SSIMFitness
 
 _FITNESS_STRATEGIES: Dict[str, type] = {
     "pixel_mse": PixelMSEFitness,
+    "ssim": SSIMFitness,
 }
 
 def build_fitness(name: str, params: dict) -> FitnessStrategy:

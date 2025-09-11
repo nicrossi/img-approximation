@@ -1,0 +1,44 @@
+experiment:
+  name: test
+  output_dir: output/${experiment.name}  # timestamp appended automatically
+
+data:
+  image_path: assets/argentina-flag.png
+  canvas_size: [600, 400]  # width, height
+
+renderer:
+  backend: pillow
+
+fitness:
+  name: ssim
+  params: {}
+
+selection:
+  name: universal
+  params: {}
+
+crossover:
+  name: uniform
+  name: annular
+  params: {}
+
+mutation:
+  name: gen
+  params:
+    point_sigma: 0.05
+    color_sigma: 15.0
+
+ga:
+  pop_size: 64
+  generations: 1000
+  elitism: 2
+  maximize: true
+  rho: 0.5  # generation gap (youth bias)
+  max_workers: 32
+  early_stopping_patience: 25
+  error_threshold: 1000.0
+
+genome:
+  num_triangles: 30
+
+seed: 42
