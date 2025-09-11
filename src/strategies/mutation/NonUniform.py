@@ -64,7 +64,8 @@ class NonUniform:
                 self._maybe_mutate_coord(t.p3[0], 0.0, 1.0, self.p_vertex_component),
                 self._maybe_mutate_coord(t.p3[1], 0.0, 1.0, self.p_vertex_component),
             )
-            tris[idx] = Triangle(p1, p2, p3, t.color)
+            new_z = max(0, min(255, t.z_index + self.rng.randint(-5, 5)))
+            tris[idx] = Triangle(p1, p2, p3, t.color, new_z)
         else:
             # Mutate color channels independently with probability p_color_component
             r, g, b, a = t.color
@@ -73,6 +74,6 @@ class NonUniform:
                     return int(round(self._mutate_scalar_non_uniform(float(c), 0.0, 255.0)))
                 return c
             mutated_color = tuple(int(_clamp(mut_channel(c), 0, 255)) for c in (r, g, b, a))  # type: ignore[arg-type]
-            tris[idx] = Triangle(t.p1, t.p2, t.p3, mutated_color)  # type: ignore[arg-type]
+            tris[idx] = Triangle(t.p1, t.p2, t.p3, mutated_color, max(0, min(255, t.z_index + self.rng.randint(-5, 5))))  # type: ignore[arg-type]
 
         return Individual(tris)

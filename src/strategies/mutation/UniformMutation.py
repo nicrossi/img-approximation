@@ -67,7 +67,8 @@ class UniformMutation(MutationStrategy):
             x2, y2 = self._mutate_point(t.p2[0], t.p2[1])
             x3, y3 = self._mutate_point(t.p3[0], t.p3[1])
             r, g, b, a = self._mutate_color(t.color[0], t.color[1], t.color[2], t.color[3])
-            new_tris.append(Triangle((x1, y1), (x2, y2), (x3, y3), (r, g, b, a)))
+            new_tris.append(Triangle((x1, y1), (x2, y2), (x3, y3), (r, g, b, a),
+                                     max(0, min(255, t.z_index + self.rng.randint(-5, 5)))))
 
         # Possibly swap triangles to change order
         self._maybe_swap(new_tris)

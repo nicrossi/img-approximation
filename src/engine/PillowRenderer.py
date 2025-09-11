@@ -25,6 +25,10 @@ class PillowRenderer:
         of shape ``(height, width, 4)`` with dtype ``uint8``.
         """
         canvas = Image.new("RGBA", (self.width, self.height), self.background)
+
+        # Step 1: Sort by z_index (ascending → lower z first)
+        sorted_triangles = sorted(triangles, key=lambda t: t.z_index)
+
         for tri in triangles:
             overlay = Image.new("RGBA", (self.width, self.height), (0, 0, 0, 0))
             draw = ImageDraw.Draw(overlay, "RGBA")

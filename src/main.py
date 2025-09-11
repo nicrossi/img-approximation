@@ -44,7 +44,8 @@ def _init_population(pop_size: int, num_triangles: int, canvas_size: Tuple[int, 
                 random.randint(0, 255),
                 random.randint(0, 255),
             )
-            triangles.append(Triangle(p1, p2, p3, color))
+            z = random.randint(0, 100)
+            triangles.append(Triangle(p1, p2, p3, color, z_index=z))
 
         population.append(Individual(triangles))
 
