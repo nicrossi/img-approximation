@@ -48,7 +48,7 @@ class GenMutation(MutationStrategy):
             p2 = self._jitter_point(t.p2)
             p3 = self._jitter_point(t.p3)
             color = self._jitter_color(t.color)
-            z = max(0, min(255, t.z_index + self.rng.randint(-5, 5)))  # Option B
+            z = _clamp01(t.z_index + self.rng.gauss(0.0, self.point_sigma))
             new_tris.append(Triangle(p1, p2, p3, color, z))
         return Individual(new_tris)
 

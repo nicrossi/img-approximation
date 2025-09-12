@@ -50,9 +50,11 @@ class MultiGenLimitedMutation(MutationStrategy):
         b = _clamp255(int(round(triangle.color[2] + self.rng.gauss(0.0, self.color_sigma))))
         a = _clamp255(int(round(triangle.color[3] + self.rng.gauss(0.0, self.color_sigma))))
 
-        # Existing code...
+        # Mutat z index
+        z = _clamp01(triangle.z_index + self.rng.gauss(0.0, self.point_sigma))
+        
         return Triangle((x1, y1), (x2, y2), (x3, y3), (r, g, b, a),
-                        z_index=max(0, min(255, triangle.z_index + self.rng.randint(-5, 5))))
+                        z_index=z)
 
     def mutate(self, ind: Individual) -> Individual:
         if not ind.triangles:
