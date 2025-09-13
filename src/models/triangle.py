@@ -9,7 +9,7 @@ RGBA  = Tuple[int, int, int, int]     # 0..255
 class Triangle:
     p1: Point; p2: Point; p3: Point
     color: RGBA
-    z_index: int = 0
+    z_index: float = 0
 
     @staticmethod
     def triangle_to_dict(t: Triangle) -> dict:
