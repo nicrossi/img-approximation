@@ -20,7 +20,7 @@ class AnnularCrossover(CrossoverStrategy):
     def crossover(self, p1: Individual, p2: Individual) -> Tuple[Individual, Individual]:
         n = len(p1.triangles)
         if n == 0:
-            return p1, p2
+            return Individual([]), Individual([])
 
         start = self.rng.randint(0, n - 1)
         length = self.rng.randint(1, n)
@@ -29,6 +29,7 @@ class AnnularCrossover(CrossoverStrategy):
             a_ring = [a.triangles[(start + i) % n] for i in range(length)]
             b_tail = [b.triangles[i] for i in range(n) if i < start or i >= (start + length) % n]
             new_triangles = b_tail[:start] + a_ring + b_tail[start:]
-            return Individual(new_triangles[:n])  # Ensure length stays constant
+            # Clone to avoid sharing references
+            return Individual([Triangle.clone(t) for t in new_triangles[:n]])
 
         return crossover_one(p1, p2), crossover_one(p2, p1)

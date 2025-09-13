@@ -20,3 +20,8 @@ class Triangle:
             "color": [t.color[0], t.color[1], t.color[2], t.color[3]],
             "z_index": t.z_index
         }
+
+    @staticmethod
+    def clone(t: Triangle) -> Triangle:
+        """Create a value-equal copy of the triangle (no shared object reference)."""
+        return Triangle(t.p1, t.p2, t.p3, t.color, t.z_index)

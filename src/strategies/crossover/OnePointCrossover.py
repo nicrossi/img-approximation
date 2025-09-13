@@ -3,6 +3,7 @@ from dataclasses import dataclass, field
 from typing import Tuple
 from src.strategies.crossover.CrossoverStrategy import CrossoverStrategy
 from src.models.individual import Individual
+from src.models.triangle import Triangle
 
 
 @dataclass
@@ -14,8 +15,11 @@ class OnePointCrossover(CrossoverStrategy):
             raise ValueError("Parents must have the same number of triangles")
         n = len(parent1.triangles)
         if n < 2:
-            return Individual(list(parent1.triangles)), Individual(list(parent2.triangles))
+            return (
+                Individual([Triangle.clone(t) for t in parent1.triangles]),
+                Individual([Triangle.clone(t) for t in parent2.triangles]),
+            )
         point = self.rng.randrange(1, n)
-        child1_tris = parent1.triangles[:point] + parent2.triangles[point:]
-        child2_tris = parent2.triangles[:point] + parent1.triangles[point:]
+        child1_tris = [Triangle.clone(t) for t in (parent1.triangles[:point] + parent2.triangles[point:])]
+        child2_tris = [Triangle.clone(t) for t in (parent2.triangles[:point] + parent1.triangles[point:])]
         return Individual(child1_tris), Individual(child2_tris)

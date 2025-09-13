@@ -4,6 +4,7 @@ from typing import Tuple
 
 from src.strategies.crossover.CrossoverStrategy import CrossoverStrategy
 from src.models.individual import Individual
+from src.models.triangle import Triangle
 
 
 @dataclass
@@ -28,10 +29,10 @@ class UniformCrossover(CrossoverStrategy):
         child2_tris = []
         for t1, t2 in zip(parent1.triangles, parent2.triangles):
             if self.rng.random() < self.p:
-                child1_tris.append(t1)
-                child2_tris.append(t2)
+                child1_tris.append(Triangle.clone(t1))
+                child2_tris.append(Triangle.clone(t2))
             else:
-                child1_tris.append(t2)
-                child2_tris.append(t1)
+                child1_tris.append(Triangle.clone(t2))
+                child2_tris.append(Triangle.clone(t1))
 
         return Individual(child1_tris), Individual(child2_tris)
