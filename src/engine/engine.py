@@ -8,6 +8,7 @@ from src.strategies.selection.SelectionStrategy import SelectionStrategy
 from src.strategies.crossover.CrossoverStrategy import CrossoverStrategy
 from src.strategies.mutation.MutationStrategy import MutationStrategy
 from src.strategies.fitness.FitnessStrategy import FitnessStrategy
+from src.utils.diversity import population_diversity
 from src.utils.metrics import GAMetrics
 from concurrent.futures import ProcessPoolExecutor
 import numpy as np
@@ -78,6 +79,7 @@ class GAEngine:
             metrics.min_fitnesses.append(fitness_arr.min())
             metrics.mean_fitnesses.append(fitness_arr.mean())
             metrics.std_fitnesses.append(fitness_arr.std())
+            metrics.population_diversities.append(population_diversity(pop))
 
             #for early stopping if convergence tracking variables:
             best_fitness = fitness_arr.max() if self.maximize else fitness_arr.min()
@@ -159,6 +161,7 @@ class GAEngine:
                 metrics.min_fitnesses.append(min_f)
                 metrics.mean_fitnesses.append(mean_f)
                 metrics.std_fitnesses.append(std_f)
+                metrics.population_diversities.append(population_diversity(pop))
                 print(f"Generation {gen+1}/{self.generations}: max={max_f:.6g} min={min_f:.6g} mean={mean_f:.6g} std={std_f:.6g}")
 
         best_idx = int(fitness_arr.argmax()) if self.maximize else int(fitness_arr.argmin())

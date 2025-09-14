@@ -13,6 +13,7 @@ class GAMetrics:
     max_fitnesses: list[float] = field(default_factory=list)
     min_fitnesses: list[float] = field(default_factory=list)
     std_fitnesses: list[float] = field(default_factory=list)
+    population_diversities: list[float] = field(default_factory=list)
 
 
 def write_metrics(
