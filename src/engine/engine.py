@@ -25,6 +25,7 @@ class GAEngine:
     elitism: int = 1
     maximize: bool = False
     rng: random.Random = field(default_factory=random.Random)
+    survivor_selection: SelectionStrategy | None = None
     # Generation gap (youth bias): fraction of population replaced by offspring each generation
     rho: float = 0.5
     max_workers: int | None = None # thread-pool size for fitness evaluation
@@ -41,6 +42,8 @@ class GAEngine:
             self.crossover.rng = random.Random(self.rng.random())
         if self.mutation is not None and hasattr(self.mutation, "rng"):
             self.mutation.rng = random.Random(self.rng.random())
+        if self.survivor_selection is not None and hasattr(self.survivor_selection, "rng"):
+            self.survivor_selection.rng = random.Random(self.rng.random())
 
     def _evaluate(self, population: Sequence[Individual], executor: ProcessPoolExecutor) -> List[float]:
         """Return fitness scores for each individual in ``population``."""
@@ -112,11 +115,26 @@ class GAEngine:
                 children = list(islice(children, num_children))
 
                 survivors_needed = self.pop_size - self.elitism - len(children)
-                survivors: List[Individual] = (
-                    [ind for _, ind in ranked[self.elitism : self.elitism + survivors_needed]]
-                    if survivors_needed > 0
-                    else []
-                )
+                if survivors_needed > 0:
+                    if self.survivor_selection is None:
+                        survivors = [
+                            ind
+                            for _, ind in ranked[
+                                          self.elitism : self.elitism + survivors_needed
+                                          ]
+                        ]
+                    else:
+                        candidates = ranked[self.elitism :]
+                        cand_scores = self._selection_scores(
+                            [fit for fit, _ in candidates]
+                        )
+                        idxs = self.survivor_selection.select(
+                            cand_scores, survivors_needed
+                        )
+                        pool = [ind for _, ind in candidates]
+                        survivors = [pool[i] for i in idxs]
+                else:
+                    survivors = []
 
                 new_pop: List[Individual] = [*elite, *children, *survivors]
 

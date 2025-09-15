@@ -67,12 +67,14 @@ def main():
     renderer = PillowRenderer(*cfg["data"]["canvas_size"]) if cfg["renderer"]["backend"] == "pillow" else None  # Other renderers TBD
     fit = build_fitness(cfg["fitness"]["name"], {**(cfg["fitness"].get("params") or {}), "renderer": renderer, "target": target})
     select = build_selection(cfg["selection"]["name"], cfg["selection"].get("params") or {})
+    survivor_select = (build_selection(cfg["survivor_selection"]["name"], cfg["survivor_selection"].get("params") or {}) if "survivor_selection" in cfg else None)
     xover = build_crossover(cfg["crossover"]["name"], cfg["crossover"].get("params") or {})
     mutate = build_mutation(cfg["mutation"]["name"], cfg["mutation"].get("params") or {}) if "mutation" in cfg else None
 
     eng = GAEngine(
         fitness=fit,
         selection=select,
+        survivor_selection=survivor_select,
         crossover=xover,
         mutation=mutate,
         pop_size=cfg["ga"]["pop_size"],
