@@ -6,12 +6,52 @@ The system supports pluggable selection/crossover/mutation strategies and YAML/J
 and an image representation of the final triangle set—offering a compact, human-legible “compressed” form.
 
 ## Models Overview
-- **Gene**: Each [triangle](./src/models/triangle.py) is represented by its 3 vertex points and a RGBA color. `(p1,p2,p3, R,G,B,A)` -> 10 alleles per gene `(6 floats, 4 ints)`.
+- **Gene**: Each [triangle](./src/models/triangle.py) is represented by its 3 vertex points, an RGBA color, and a z-index. `(p1,p2,p3, R,G,B,A, z-index)` -> 11 alleles per gene `(7 floats, 4 ints)`.
     - Vertex points `p1, p2, p3` coordinates are normalized `floats` in `[0, 1]` relative to the canvas size.
-    - Color channels `R, G, B, A` are `ints` in `[0, 255]`. 
+    - Color channels `R, G, B, A` are `ints` in `[0, 255]`.
+    - `z-index` is the gene's position in the genome list.
 
 
-- **Genome**: Each [individual](./src/models/individual.py) encodes a fixed number of triangles. Sorted list of `num_triangles` genes, `z-order` matters (later triangles overlay earlier ones, see [PillowRenderer](./src/engine/PillowRenderer.py)).
+- **Genome**: Each [individual](./src/models/individual.py) encodes a fixed number of triangles. Sorted list of `num_triangles` genes, `z-index` order matters (higher index triangles overlay earlier ones, see [PillowRenderer](./src/engine/PillowRenderer.py)).
+
+## Selection Strategies
+
+- Parents selection: Configured under `selection.name` (optional parameters via `selection.params`)
+- New generation selection: Configured under `survivor_selection.name` (optional parameters via `survivor_selection.params`)
+
+| Strategy          | Description / Key Params                                                                     |
+| ----------------- |----------------------------------------------------------------------------------------------|
+| `elite`           | Picks the top‑`k` fitness values directly, no randomness                                     |
+| `roulette`        | Weighted roulette wheel selection based on fitness values                                    |
+| `universal`       | Stochastic universal sampling—equally spaced pointers reduce variance                        |
+| `boltzmann`       | Temperature‑based scaling that decays each generation; params: `t_initial`, `t_final`, `decay` |
+| `tournament`      | Chooses the best from random subsets; param: `tournament_size`                               |
+| `prob_tournament` | Two-way tournament; best chosen with probability `threshold`                                 |
+| `ranking`         | Ranks individuals and applies roulette to normalized ranks                                   |
+
+## Crossover Strategies
+
+Configured under crossover.name with (optional parameters via`crossover.params`)
+
+| Strategy    | Description / Key Params                                                                      |
+| ----------- |-----------------------------------------------------------------------------------------------|
+| `one_point` | Cuts parent genomes at one point and swaps tails                                              |
+| `two_point` | Swaps the segment between two crossover points                                                |
+| `uniform`   | Each triangle inherits from either parent with probability `p`                                |
+| `annular`   | Inserts a random ring (segment) of triangles from one parent into the other                   |
+
+
+## Mutation Strategies
+
+Configured under `mutation.name` with (optional parameters via `mutation.params`)
+
+| Strategy     | Description / Key Params                                                                                                                                                                                       |
+| ------------ |----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `uniform`    | Mutates each vertex and color with independent rates; occasional triangle swap. Params: `point_rate`, `point_sigma`, `color_rate`, `color_sigma`, `swap_rate`                                                  |
+| `gen`        | Small Gaussian jitter applied to all triangle genes; params: `point_sigma`, `color_sigma`                                                                                                                      |
+| `multigen`   | Mutates a random subset of triangles intensively; params: `min_genes`, `max_genes`, `point_sigma`, `color_sigma`                                                                                               |
+| `nonuniform` | Mutation range shrinks over time; mutates vertices or color channels based on probabilities. Params include `b`, `p_mutate_vertices`, `p_vertex_component`, `p_color_component`                                |
+
 
 ## Configuration
 
@@ -31,6 +71,8 @@ fitness:
   name: pixel_mse
 selection:
   name: roulette
+survivor_selection:
+  name: elite
 crossover:
   name: one_point
 mutation:
